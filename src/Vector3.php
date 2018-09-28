@@ -24,14 +24,6 @@ declare(strict_types=1);
 namespace pocketmine\math;
 
 class Vector3{
-
-	public const SIDE_DOWN = 0;
-	public const SIDE_UP = 1;
-	public const SIDE_NORTH = 2;
-	public const SIDE_SOUTH = 3;
-	public const SIDE_WEST = 4;
-	public const SIDE_EAST = 5;
-
 	/** @var float|int */
 	public $x;
 	/** @var float|int */
@@ -144,17 +136,17 @@ class Vector3{
 	 */
 	public function getSide(int $side, int $step = 1){
 		switch($side){
-			case Vector3::SIDE_DOWN:
+			case Facing::DOWN:
 				return new Vector3($this->x, $this->y - $step, $this->z);
-			case Vector3::SIDE_UP:
+			case Facing::UP:
 				return new Vector3($this->x, $this->y + $step, $this->z);
-			case Vector3::SIDE_NORTH:
+			case Facing::NORTH:
 				return new Vector3($this->x, $this->y, $this->z - $step);
-			case Vector3::SIDE_SOUTH:
+			case Facing::SOUTH:
 				return new Vector3($this->x, $this->y, $this->z + $step);
-			case Vector3::SIDE_WEST:
+			case Facing::WEST:
 				return new Vector3($this->x - $step, $this->y, $this->z);
-			case Vector3::SIDE_EAST:
+			case Facing::EAST:
 				return new Vector3($this->x + $step, $this->y, $this->z);
 			default:
 				return $this;
@@ -167,7 +159,7 @@ class Vector3{
 	 * @return Vector3
 	 */
 	public function down(int $step = 1){
-		return $this->getSide(self::SIDE_DOWN, $step);
+		return $this->getSide(Facing::DOWN, $step);
 	}
 
 	/**
@@ -176,7 +168,7 @@ class Vector3{
 	 * @return Vector3
 	 */
 	public function up(int $step = 1){
-		return $this->getSide(self::SIDE_UP, $step);
+		return $this->getSide(Facing::UP, $step);
 	}
 
 	/**
@@ -185,7 +177,7 @@ class Vector3{
 	 * @return Vector3
 	 */
 	public function north(int $step = 1){
-		return $this->getSide(self::SIDE_NORTH, $step);
+		return $this->getSide(Facing::NORTH, $step);
 	}
 
 	/**
@@ -194,7 +186,7 @@ class Vector3{
 	 * @return Vector3
 	 */
 	public function south(int $step = 1){
-		return $this->getSide(self::SIDE_SOUTH, $step);
+		return $this->getSide(Facing::SOUTH, $step);
 	}
 
 	/**
@@ -203,7 +195,7 @@ class Vector3{
 	 * @return Vector3
 	 */
 	public function west(int $step = 1){
-		return $this->getSide(self::SIDE_WEST, $step);
+		return $this->getSide(Facing::WEST, $step);
 	}
 
 	/**
@@ -212,7 +204,48 @@ class Vector3{
 	 * @return Vector3
 	 */
 	public function east(int $step = 1){
-		return $this->getSide(self::SIDE_EAST, $step);
+		return $this->getSide(Facing::EAST, $step);
+	}
+
+	/**
+	 * Yields vectors stepped out from this one in all directions.
+	 *
+	 * @param int $step Distance in each direction to shift the vector
+	 *
+	 * @return \Generator|Vector3[]
+	 */
+	public function sides(int $step = 1) : \Generator{
+		foreach(Facing::ALL as $facing){
+			yield $facing => $this->getSide($facing, $step);
+		}
+	}
+
+	/**
+	 * Same as sides() but returns a pre-populated array instead of Generator.
+	 *
+	 * @param bool $keys
+	 * @param int  $step
+	 *
+	 * @return Vector3[]
+	 */
+	public function sidesArray(bool $keys = false, int $step = 1) : array{
+		return iterator_to_array($this->sides($step), $keys);
+	}
+
+	/**
+	 * Yields vectors stepped out from this one in directions except those on the given axis.
+	 *
+	 * @param int $axis Facing directions on this axis will be excluded
+	 * @param int $step
+	 *
+	 * @return \Generator|Vector3[]
+	 */
+	public function sidesAroundAxis(int $axis, int $step = 1) : \Generator{
+		foreach(Facing::ALL as $facing){
+			if(Facing::axis($facing) !== $axis){
+				yield $facing => $this->getSide($facing, $step);
+			}
+		}
 	}
 
 	/**
@@ -222,22 +255,6 @@ class Vector3{
 	 */
 	public function asVector3() : Vector3{
 		return new Vector3($this->x, $this->y, $this->z);
-	}
-
-	/**
-	 * Returns the Vector3 side number opposite the specified one
-	 *
-	 * @param int $side 0-5 one of the Vector3::SIDE_* constants
-	 * @return int
-	 *
-	 * @throws \InvalidArgumentException if an invalid side is supplied
-	 */
-	public static function getOppositeSide(int $side) : int{
-		if($side >= 0 and $side <= 5){
-			return $side ^ 0x01;
-		}
-
-		throw new \InvalidArgumentException("Invalid side $side given to getOppositeSide");
 	}
 
 	public function distance(Vector3 $pos) : float{
@@ -305,9 +322,6 @@ class Vector3{
 	 */
 	public function getIntermediateWithXValue(Vector3 $v, float $x) : ?Vector3{
 		$xDiff = $v->x - $this->x;
-		$yDiff = $v->y - $this->y;
-		$zDiff = $v->z - $this->z;
-
 		if(($xDiff * $xDiff) < 0.0000001){
 			return null;
 		}
@@ -317,7 +331,7 @@ class Vector3{
 		if($f < 0 or $f > 1){
 			return null;
 		}else{
-			return new Vector3($x, $this->y + $yDiff * $f, $this->z + $zDiff * $f);
+			return new Vector3($x, $this->y + ($v->y - $this->y) * $f, $this->z + ($v->z - $this->z) * $f);
 		}
 	}
 
@@ -331,10 +345,7 @@ class Vector3{
 	 * @return Vector3|null
 	 */
 	public function getIntermediateWithYValue(Vector3 $v, float $y) : ?Vector3{
-		$xDiff = $v->x - $this->x;
 		$yDiff = $v->y - $this->y;
-		$zDiff = $v->z - $this->z;
-
 		if(($yDiff * $yDiff) < 0.0000001){
 			return null;
 		}
@@ -344,7 +355,7 @@ class Vector3{
 		if($f < 0 or $f > 1){
 			return null;
 		}else{
-			return new Vector3($this->x + $xDiff * $f, $y, $this->z + $zDiff * $f);
+			return new Vector3($this->x + ($v->x - $this->x) * $f, $y, $this->z + ($v->z - $this->z) * $f);
 		}
 	}
 
@@ -358,10 +369,7 @@ class Vector3{
 	 * @return Vector3|null
 	 */
 	public function getIntermediateWithZValue(Vector3 $v, float $z) : ?Vector3{
-		$xDiff = $v->x - $this->x;
-		$yDiff = $v->y - $this->y;
 		$zDiff = $v->z - $this->z;
-
 		if(($zDiff * $zDiff) < 0.0000001){
 			return null;
 		}
@@ -371,7 +379,7 @@ class Vector3{
 		if($f < 0 or $f > 1){
 			return null;
 		}else{
-			return new Vector3($this->x + $xDiff * $f, $this->y + $yDiff * $f, $z);
+			return new Vector3($this->x + ($v->x - $this->x) * $f, $this->y + ($v->y - $this->y) * $f, $z);
 		}
 	}
 

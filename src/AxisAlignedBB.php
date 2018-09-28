@@ -43,6 +43,15 @@ class AxisAlignedBB{
 	}
 
 	public function setBounds(float $minX, float $minY, float $minZ, float $maxX, float $maxY, float $maxZ){
+		if($minX > $maxX){
+			throw new \InvalidArgumentException("minX $minX is larger than maxX $maxX");
+		}
+		if($minY > $maxY){
+			throw new \InvalidArgumentException("minY $minY is larger than maxY $maxY");
+		}
+		if($minZ > $maxZ){
+			throw new \InvalidArgumentException("minZ $minZ is larger than maxZ $maxZ");
+		}
 		$this->minX = $minX;
 		$this->minY = $minY;
 		$this->minZ = $minZ;
@@ -400,17 +409,17 @@ class AxisAlignedBB{
 		$f = -1;
 
 		if($vector === $v1){
-			$f = Vector3::SIDE_WEST;
+			$f = Facing::WEST;
 		}elseif($vector === $v2){
-			$f = Vector3::SIDE_EAST;
+			$f = Facing::EAST;
 		}elseif($vector === $v3){
-			$f = Vector3::SIDE_DOWN;
+			$f = Facing::DOWN;
 		}elseif($vector === $v4){
-			$f = Vector3::SIDE_UP;
+			$f = Facing::UP;
 		}elseif($vector === $v5){
-			$f = Vector3::SIDE_NORTH;
+			$f = Facing::NORTH;
 		}elseif($vector === $v6){
-			$f = Vector3::SIDE_SOUTH;
+			$f = Facing::SOUTH;
 		}
 
 		return new RayTraceResult($this, $f, $vector);
